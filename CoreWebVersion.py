@@ -138,14 +138,22 @@ def check_dbscan(df_input, visualize=False, plot_list_to_append=None):
 def check_zscore(df_input, threshold=3.0, visualize=False, plot_list_to_append=None):
     numerical_columns = df_input.select_dtypes(include=[np.number]).columns.tolist()
 
-    if not numerical_columns:
+    technical_cols = [
+        'isolation_forest_anomaly_flag',
+        'zscore_anomaly_flag',
+        'dbscan_anomaly_flag',
+        'is_warning',
+    ]
+    filtered_numerical_columns = [col for col in numerical_columns if col not in technical_cols and not col.endswith('_anomaly_flag')]
+
+    if not filtered_numerical_columns:
         print("Z-score: Нет числовых признаков для анализа.")
         return pd.Series(0, index=df_input.index), 0.0
 
     overall_anomaly_flags_np = np.zeros(len(df_input), dtype=int)
     zscore_values_for_viz = pd.DataFrame(index=df_input.index)
 
-    for col in numerical_columns:
+    for col in filtered_numerical_columns:
         col_data = df_input[col].copy()
         col_mean = col_data.mean()
         col_std = col_data.std()
@@ -168,12 +176,12 @@ def check_zscore(df_input, threshold=3.0, visualize=False, plot_list_to_append=N
 
     print(f"Z-score обнаружил {n_anomalies} аномалий ({percent}%)")
 
-    if visualize and len(numerical_columns) > 0 and plot_list_to_append is not None:
+    if visualize and len(filtered_numerical_columns) > 0 and plot_list_to_append is not None:
         if not zscore_values_for_viz.empty:
-            fig = plt.figure(figsize=(12, min(8, 2 * len(numerical_columns))))
-            cols_to_plot = min(4, len(numerical_columns))
+            fig = plt.figure(figsize=(12, min(8, 2 * len(filtered_numerical_columns))))
+            cols_to_plot = min(4, len(filtered_numerical_columns))
 
-            for i, col in enumerate(numerical_columns[:cols_to_plot]):
+            for i, col in enumerate(filtered_numerical_columns[:cols_to_plot]):
                 plt.subplot( (cols_to_plot + 1) // 2, 2, i + 1)
                 data_to_plot = zscore_values_for_viz[col + '_zscore'].replace([np.inf, -np.inf], np.nan).dropna()
 
