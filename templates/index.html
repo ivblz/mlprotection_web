@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Анализ CSV файлов</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: #5a5a5a;
+        }
+
+        input[type="file"],
+        input[type="number"],
+        select,
+        button {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        pre {
+            background-color: #eee;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .plot-image {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .error {
+            color: red;
+            margin-bottom: 15px;
+        }
+
+        .result-links a {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .result-links a:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Анализ CSV файла</h1>
+
+        {% if error_message %}
+            <p class="error">{{ error_message }}</p>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            <p>
+                <label for="file">Выберите CSV файл:</label><br>
+                <input type="file" name="file" id="file" accept=".csv" required>
+            </p>
+
+            <p>
+                <label>Тип задачи:</label><br>
+                <input type="radio" name="task_type" value="regression" id="task_regression" checked>
+                <label for="task_regression">Регрессия</label><br>
+                <input type="radio" name="task_type" value="classification" id="task_classification">
+                <label for="task_classification">Классификация</label>
+            </p>
+
+            <p>
+                <input type="checkbox" name="visualize" id="visualize" value="true">
+                <label for="visualize">Показать графики</label>
+            </p>
+
+            <button type="submit">Анализировать</button>
+        </form>
+
+        {% if results_exist %}
+            <h2>Результаты анализа для файла: {{ original_filename }}</h2>
+
+            {% if terminal_output %}
+                <h3>Вывод процесса анализа:</h3>
+                <pre>{{ terminal_output }}</pre>
+            {% endif %}
+
+            <div class="result-links">
+                {% if warning_file %}
+                    <a href="{{ url_for('download_file', filename=warning_file) }}">Скачать warning_data.csv</a>
+                {% endif %}
+                {% if treated_file %}
+                    <a href="{{ url_for('download_file', filename=treated_file) }}">Скачать treat_data.csv</a>
+                {% endif %}
+            </div>
+
+            {% if plots %}
+                <h3>Графики:</h3>
+                {% for plot_idx in plots %}
+                    <img src="{{ url_for('serve_plot', plot_idx=plot_idx) }}" alt="График анализа" class="plot-image"><br>
+                {% endfor %}
+            {% else %}
+                {% if request.form.visualize == 'true' %}
+                    <p>Графики не были сгенерированы (возможно, недостаточно данных или признаков).</p>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html> 
